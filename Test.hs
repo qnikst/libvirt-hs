@@ -12,9 +12,10 @@ main = do
   args <- getArgs
   case args of
     ["test"]          -> initialize >> withConnection uri doTest
+    ["list-nets"]     -> initialize >> withConnection uri listNets
     ["start", domain] -> initialize >> withConnection uri (start domain)
     ["stop",  domain] -> initialize >> withConnection uri (stop  domain)
-    other -> putStrLn "Usage: Test <test | start DOMAIN | stop DOMAIN>"
+    other -> putStrLn "Usage: Test <test | list-nets | start DOMAIN | stop DOMAIN>"
 
 start :: String -> Connection -> IO ()
 start domain conn = do
@@ -45,4 +46,16 @@ doTest conn = do
 
   nr <- runningDomainsCount conn
   putStrLn $ "Number of running domains: " ++ show nr
+
+listNets :: Connection -> IO ()
+listNets conn = do
+  putStrLn $ "Defined networks:"
+  names <- definedNetworksNames conn
+  forM_ names putStrLn
+  putStrLn ""
+  nr <- runningNetworksCount conn
+  putStrLn $ "Number of running networks: " ++ show nr
+  putStrLn "Running networks:"
+  names <- runningNetworksNames conn
+  forM_ names putStrLn
 
