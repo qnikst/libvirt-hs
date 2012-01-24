@@ -17,5 +17,10 @@ main = do
   nr <- runningDomainsCount c
   putStrLn $ "Number of running domains: " ++ show nr
 
+  putStrLn $ "Running WinXP..."
+
+  winxp <- lookupDomainName c "WinXP"
+  createDomain winxp
+
   closeConnection c
   return ()

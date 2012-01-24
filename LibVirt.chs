@@ -137,21 +137,23 @@ getDomainInfo (Domain dptr) = do
                     diNrVirtCPU = fromIntegral ncpus,
                     diCPUTime = fromIntegral cputime }
 
-{# fun virDomainShutdown { domainToPtr `Domain' } -> `Int' #}
+{# fun virDomainCreate as createDomain { domainToPtr `Domain' } -> `Int' #}
 
-{# fun virDomainReboot { domainToPtr `Domain', id `CUInt' } -> `Int' #}
+{# fun virDomainShutdown as shutdownDomain { domainToPtr `Domain' } -> `Int' #}
 
-{# fun virDomainDestroy { domainToPtr `Domain' } -> `Int' #}
+{# fun virDomainReboot as rebootDomain { domainToPtr `Domain', id `CUInt' } -> `Int' #}
 
-{# fun virDomainRef { domainToPtr `Domain' } -> `Int' #}
+{# fun virDomainDestroy as destroyDomain { domainToPtr `Domain' } -> `Int' #}
 
-{# fun virDomainFree { domainToPtr `Domain' } -> `Int' #}
+{# fun virDomainRef as refDomain { domainToPtr `Domain' } -> `Int' #}
 
-{# fun virDomainSuspend { domainToPtr `Domain' } -> `Int' #}
+{# fun virDomainFree as freeDomain { domainToPtr `Domain' } -> `Int' #}
 
-{# fun virDomainResume { domainToPtr `Domain' } -> `Int' #}
+{# fun virDomainSuspend as suspendDomain { domainToPtr `Domain' } -> `Int' #}
 
-{# fun virDomainSave { domainToPtr `Domain', `String' } -> `Int' #}
+{# fun virDomainResume as resumeDomain { domainToPtr `Domain' } -> `Int' #}
 
-{# fun virDomainRestore { connectionToPtr `Connection', `String' } -> `Int' #}
+{# fun virDomainSave as saveDomain { domainToPtr `Domain', `String' } -> `Int' #}
+
+{# fun virDomainRestore as restoreDomain { connectionToPtr `Connection', `String' } -> `Int' #}
 
