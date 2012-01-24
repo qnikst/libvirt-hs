@@ -3,7 +3,8 @@
 *.chi
 *.chs.h
 *.swp
-LibVirt.hs
+System/LibVirt/Foreign.hs
+System/LibVirt/Errors.hs
 dist/
 cabal-dev/
 Test

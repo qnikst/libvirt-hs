@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ForeignFunctionInterface, StandaloneDeriving #-}
 
 {# context lib="virt" prefix="vir" #}
 
@@ -6,7 +6,7 @@
 
 module System.LibVirt.Foreign
   (-- * Types
-   Connection, Domain, 
+   Connection, Domain, Network,
    DomainID,
    DomainInfo (..),
    DomainState (..),
@@ -36,7 +36,13 @@ module System.LibVirt.Foreign
    shutdownDomain, rebootDomain,
    suspendDomain, resumeDomain,
    saveDomain, restoreDomain,
-   refDomain, freeDomain
+   refDomain, freeDomain,
+
+   -- * Networks management
+   getNetworkConnection,
+
+   -- * Internal low-level functions
+   ptrToConnection, ptrToDomain, ptrToNetwork
   ) where
 
 import Data.Bits
@@ -48,6 +54,11 @@ cIntConv = fromIntegral
 
 {# pointer *virConnectPtr as Connection newtype #}
 
+deriving instance Eq Connection
+
+instance Show Connection where
+  show (Connection ptr) = "<Connection: " ++ show ptr ++ ">"
+
 ptrToConnection :: Ptr () -> Connection
 ptrToConnection ptr = Connection (castPtr ptr)
 
@@ -55,6 +66,11 @@ connectionToPtr :: Connection -> Ptr ()
 connectionToPtr (Connection ptr) = castPtr ptr
 
 {# pointer *virDomainPtr as Domain newtype #}
+
+deriving instance Eq Domain
+
+instance Show Domain where
+  show (Domain ptr) = "<Domain: " ++ show ptr ++ ">"
 
 ptrToDomain :: Ptr () -> Domain
 ptrToDomain ptr = Domain (castPtr ptr)
@@ -97,6 +113,19 @@ data SecurityModel = SecurityModel {
   deriving (Eq, Show)
 
 {# pointer *virSecurityModelPtr as SecurityModelPtr -> SecurityModel #}
+
+{# pointer *virNetworkPtr as Network newtype #}
+
+deriving instance Eq Network
+
+instance Show Network where
+  show (Network ptr) = "<Network: " ++ show ptr ++ ">"
+
+ptrToNetwork :: Ptr () -> Network
+ptrToNetwork ptr = Network (castPtr ptr)
+
+networkToPtr :: Network -> Ptr ()
+networkToPtr (Network ptr) = castPtr ptr
 
 data NodeInfo = NodeInfo {
   niModel :: String,
@@ -232,3 +261,5 @@ getDomainInfo (Domain dptr) = do
     { connectionToPtr `Connection',
                       `String'      } -> `Int' #}
 
+{# fun virNetworkGetConnect as getNetworkConnection
+    { networkToPtr `Network' } -> `Connection' ptrToConnection #}
