@@ -137,4 +137,21 @@ getDomainInfo (Domain dptr) = do
                     diNrVirtCPU = fromIntegral ncpus,
                     diCPUTime = fromIntegral cputime }
 
+{# fun virDomainShutdown { domainToPtr `Domain' } -> `Int' #}
+
+{# fun virDomainReboot { domainToPtr `Domain', id `CUInt' } -> `Int' #}
+
+{# fun virDomainDestroy { domainToPtr `Domain' } -> `Int' #}
+
+{# fun virDomainRef { domainToPtr `Domain' } -> `Int' #}
+
+{# fun virDomainFree { domainToPtr `Domain' } -> `Int' #}
+
+{# fun virDomainSuspend { domainToPtr `Domain' } -> `Int' #}
+
+{# fun virDomainResume { domainToPtr `Domain' } -> `Int' #}
+
+{# fun virDomainSave { domainToPtr `Domain', `String' } -> `Int' #}
+
+{# fun virDomainRestore { connectionToPtr `Connection', `String' } -> `Int' #}
 
