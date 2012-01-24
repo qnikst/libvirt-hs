@@ -39,7 +39,9 @@ module System.LibVirt.Foreign
    refDomain, freeDomain,
 
    -- * Networks management
-   getNetworkConnection
+   getNetworkConnection,
+   runningNetworksCount, definedNetworksCount,
+   runningNetworksNames, definedNetworksNames
   ) where
 
 import Data.Bits
@@ -115,16 +117,16 @@ data ConnectCredential = ConnectCredential {
 
 {# pointer *virConnectCredentialPtr as ConnectCredentialPtr -> ConnectCredential #}
 
-{# fun virInitialize as initialize { } -> `Int' #}
+{# fun virInitialize as initialize { } -> `Int' exceptionOnMinusOne* #}
 
 {# fun virConnectOpen as openConnection
     { `String' } -> `Connection' ptrToConnection #}
 
 {# fun virConnectClose as closeConnection
-    { connectionToPtr `Connection' } -> `Int' #}
+    { connectionToPtr `Connection' } -> `Int' exceptionOnMinusOne* #}
 
 {# fun virConnectNumOfDomains as runningDomainsCount
-    { connectionToPtr `Connection' } -> `Int' #}
+    { connectionToPtr `Connection' } -> `Int' exceptionOnMinusOne* #}
 
 type DomainID = CInt
 
@@ -147,6 +149,7 @@ definedDomainsNames conn = do
         (connectionToPtr conn) nptr cn
     mapM peekCString =<< peekArray n nptr
 
+
 {# fun virDomainLookupByID as lookupDomainID
     { connectionToPtr `Connection',
       id              `DomainID'    } -> `Domain' ptrToDomain #}
@@ -156,7 +159,7 @@ definedDomainsNames conn = do
                       `String'      } -> `Domain' ptrToDomain #}
 
 {# fun virConnectNumOfDefinedDomains as definedDomainsCount
-    { connectionToPtr `Connection' } -> `Int' #}
+    { connectionToPtr `Connection' } -> `Int' exceptionOnMinusOne* #}
 
 getDomainInfo :: Domain -> IO DomainInfo
 getDomainInfo dptr = do
@@ -179,10 +182,10 @@ getDomainInfo dptr = do
                       `String'      } -> `Domain' ptrToDomain #}
 
 {# fun virDomainUndefine as undefineDomain
-    { domainToPtr `Domain' } -> `Int' #}
+    { domainToPtr `Domain' } -> `Int' exceptionOnMinusOne* #}
 
 {# fun virDomainCreate as createDomain
-    { domainToPtr `Domain' } -> `Int' #}
+    { domainToPtr `Domain' } -> `Int' exceptionOnMinusOne* #}
 
 {# fun virDomainCreateXML as createDomainXML
     { connectionToPtr `Connection',
@@ -194,34 +197,57 @@ getDomainInfo dptr = do
       flags2int   `[DomainXMLFlags]' } -> `String' #}
 
 {# fun virDomainShutdown as shutdownDomain
-    { domainToPtr `Domain' } -> `Int' #}
+    { domainToPtr `Domain' } -> `Int' exceptionOnMinusOne* #}
 
 {# fun virDomainReboot as rebootDomain
     { domainToPtr `Domain',
-      id          `CUInt'  } -> `Int' #}
+      id          `CUInt'  } -> `Int' exceptionOnMinusOne* #}
 
 {# fun virDomainDestroy as destroyDomain
-    { domainToPtr `Domain' } -> `Int' #}
+    { domainToPtr `Domain' } -> `Int' exceptionOnMinusOne* #}
 
 {# fun virDomainRef as refDomain
-    { domainToPtr `Domain' } -> `Int' #}
+    { domainToPtr `Domain' } -> `Int' exceptionOnMinusOne* #}
 
 {# fun virDomainFree as freeDomain
-    { domainToPtr `Domain' } -> `Int' #}
+    { domainToPtr `Domain' } -> `Int' exceptionOnMinusOne* #}
 
 {# fun virDomainSuspend as suspendDomain
-    { domainToPtr `Domain' } -> `Int' #}
+    { domainToPtr `Domain' } -> `Int' exceptionOnMinusOne* #}
 
 {# fun virDomainResume as resumeDomain
-    { domainToPtr `Domain' } -> `Int' #}
+    { domainToPtr `Domain' } -> `Int' exceptionOnMinusOne* #}
 
 {# fun virDomainSave as saveDomain
     { domainToPtr `Domain',
-                  `String' } -> `Int' #}
+                  `String' } -> `Int' exceptionOnMinusOne* #}
 
 {# fun virDomainRestore as restoreDomain
     { connectionToPtr `Connection',
-                      `String'      } -> `Int' #}
+                      `String'      } -> `Int' exceptionOnMinusOne* #}
 
 {# fun virNetworkGetConnect as getNetworkConnection
     { networkToPtr `Network' } -> `Connection' ptrToConnection #}
+
+{# fun virConnectNumOfNetworks as runningNetworksCount
+    { connectionToPtr `Connection' } -> `Int' exceptionOnMinusOne* #}
+
+runningNetworksNames :: Connection -> IO [String]
+runningNetworksNames conn = do
+  cn <- {# call virConnectNumOfNetworks #} (connectionToPtr conn)
+  let n = fromIntegral cn
+  allocaArray n $ \nptr -> do
+    {# call virConnectListNetworks #} (connectionToPtr conn) nptr cn
+    mapM peekCString =<< peekArray n nptr
+
+{# fun virConnectNumOfDefinedNetworks as definedNetworksCount
+    { connectionToPtr `Connection' } -> `Int' exceptionOnMinusOne* #}
+
+definedNetworksNames :: Connection -> IO [String]
+definedNetworksNames conn = do
+  cn <- {# call virConnectNumOfDefinedNetworks #} (connectionToPtr conn)
+  let n = fromIntegral cn
+  allocaArray n $ \nptr -> do
+    {# call virConnectListDefinedNetworks #} (connectionToPtr conn) nptr cn
+    mapM peekCString =<< peekArray n nptr
+

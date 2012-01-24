@@ -95,14 +95,13 @@ catchVirtError m f = do
           Nothing -> E.throw e
     Right y -> return (Right y)
 
-exceptionOnMinusOne :: IO Int -> IO Int
+exceptionOnMinusOne :: CInt -> IO Int
 exceptionOnMinusOne x = do
-  i <- x
-  if i == -1
+  if x == -1
     then do
          merr <- getLastError
          case merr of
            Just err -> E.throw err
-           Nothing -> return i
-    else return i
+           Nothing -> return (fromIntegral x)
+    else return (fromIntegral x)
 
