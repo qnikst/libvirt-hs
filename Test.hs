@@ -1,5 +1,7 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 
 import Control.Monad
+import qualified Control.Exception as E
 
 import System.LibVirt
 
@@ -20,7 +22,9 @@ main = do
   putStrLn $ "Running WinXP..."
 
   winxp <- lookupDomainName c "WinXP"
-  createDomain winxp
+  createDomain winxp `catchVirtError` (\e -> do
+                                             putStrLn "Error:"
+                                             print e)
 
   closeConnection c
   return ()

@@ -26,7 +26,7 @@ module System.LibVirt
    F.defineDomainXML, undefineDomain,
 
    -- * Domains control
-   F.createDomain, F.createDomainXML,
+   createDomain, F.createDomainXML,
    destroyDomain, 
    shutdownDomain, rebootDomain,
    suspendDomain, resumeDomain,
@@ -34,7 +34,10 @@ module System.LibVirt
    refDomain, freeDomain,
 
    -- * Networks management
-   F.getNetworkConnection
+   F.getNetworkConnection,
+
+   -- * Errors handling
+   catchVirtError
   ) where
 
 import System.LibVirt.Internal (Connection, Domain, Network)
@@ -64,6 +67,9 @@ runningDomainsCount = exceptionOnMinusOne . F.runningDomainsCount
 
 definedDomainsCount :: Connection -> IO Int
 definedDomainsCount = exceptionOnMinusOne . F.definedDomainsCount
+
+createDomain :: Domain -> IO Int
+createDomain = exceptionOnMinusOne . F.createDomain
 
 undefineDomain :: Domain -> IO Int
 undefineDomain = exceptionOnMinusOne . F.undefineDomain

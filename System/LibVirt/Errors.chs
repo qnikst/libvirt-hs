@@ -84,13 +84,16 @@ convertError ptr
 
 {# fun virGetLastError as getLastError { } -> `Maybe Error' convertError* #}
 
-catchVirtError :: IO a -> (Error -> IO a) -> IO a
-catchVirtError m f =
-  m `E.catch` (\(e :: E.SomeException) -> do
-                  merr <- getLastError  
-                  case merr of
-                    Just err -> f err
-                    Nothing -> E.throw e )
+catchVirtError :: IO a -> (Error -> IO b) -> IO (Either b a)
+catchVirtError m f = do
+  x <- E.try m
+  case x of
+    Left (e :: E.SomeException) -> do
+        merr <- getLastError  
+        case merr of
+          Just err -> Left `fmap` f err
+          Nothing -> E.throw e
+    Right y -> return (Right y)
 
 exceptionOnMinusOne :: IO Int -> IO Int
 exceptionOnMinusOne x = do
