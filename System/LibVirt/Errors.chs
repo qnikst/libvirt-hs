@@ -6,7 +6,7 @@
 
 module System.LibVirt.Errors
   (Error (..), ErrorLevel (..),
-   ErrorDomain (..),
+   ErrorDomain (..), ErrorNumber (..),
    catchVirtError,
    exceptionOnMinusOne,
    ptrToConnection, ptrToDomain, ptrToNetwork,

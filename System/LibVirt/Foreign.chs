@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface, StandaloneDeriving, DeriveDataTypeable #-}
+{-# LANGUAGE ForeignFunctionInterface, StandaloneDeriving, DeriveDataTypeable, EmptyDataDecls #-}
 
 {# context lib="virt" prefix="vir" #}
 
@@ -41,7 +41,14 @@ module System.LibVirt.Foreign
    -- * Networks management
    getNetworkConnection,
    runningNetworksCount, definedNetworksCount,
-   runningNetworksNames, definedNetworksNames
+   runningNetworksNames, definedNetworksNames,
+   lookupNetworkName, lookupNetworkUUID,
+   createNetworkXML, defineNetworkXML,
+   undefineNetwork, destroyNetwork,
+   createNetwork,
+   refNetwork, freeNetwork,
+   getNetworkName,
+   getNetworkXML
   ) where
 
 import Data.Bits
@@ -74,6 +81,9 @@ data DomainInfo = DomainInfo {
 {# enum DomainState {underscoreToCase} deriving (Eq, Show) #}
 {# enum DomainCreateFlags {underscoreToCase} deriving (Eq, Show) #}
 {# enum DomainXMLFlags {underscoreToCase} deriving (Eq, Show) #}
+
+data NetworkXMLFlags = NetworkXML
+  deriving (Eq, Show, Enum)
 
 {# pointer *virStreamPtr as Stream newtype #}
 
@@ -148,7 +158,6 @@ definedDomainsNames conn = do
     {# call virConnectListDefinedDomains #}
         (connectionToPtr conn) nptr cn
     mapM peekCString =<< peekArray n nptr
-
 
 {# fun virDomainLookupByID as lookupDomainID
     { connectionToPtr `Connection',
@@ -250,4 +259,41 @@ definedNetworksNames conn = do
   allocaArray n $ \nptr -> do
     {# call virConnectListDefinedNetworks #} (connectionToPtr conn) nptr cn
     mapM peekCString =<< peekArray n nptr
+
+{# fun virNetworkLookupByName as lookupNetworkName
+    { connectionToPtr `Connection', `String' } -> `Network' ptrToNetwork* #}
+
+withCUString :: String -> (Ptr CUChar -> IO a) -> IO a
+withCUString str fn = withCString str (fn . castPtr)
+
+{# fun virNetworkLookupByUUID as lookupNetworkUUID
+    { connectionToPtr `Connection', withCUString* `String' } -> `Network' ptrToNetwork* #}
+
+{# fun virNetworkCreateXML as createNetworkXML
+    { connectionToPtr `Connection', `String' } -> `Network' ptrToNetwork* #}
+
+{# fun virNetworkDefineXML as defineNetworkXML
+    { connectionToPtr `Connection', `String' } -> `Network' ptrToNetwork* #}
+
+{# fun virNetworkUndefine as undefineNetwork
+    { networkToPtr `Network' } -> `Int' exceptionOnMinusOne* #}
+
+{# fun virNetworkCreate as createNetwork
+    { networkToPtr `Network' } -> `Int' exceptionOnMinusOne* #}
+
+{# fun virNetworkDestroy as destroyNetwork
+    { networkToPtr `Network' } -> `Int' exceptionOnMinusOne* #}
+
+{# fun virNetworkRef as refNetwork
+    { networkToPtr `Network' } -> `Int' exceptionOnMinusOne* #}
+
+{# fun virNetworkFree as freeNetwork
+    { networkToPtr `Network' } -> `Int' exceptionOnMinusOne* #}
+
+{# fun virNetworkGetName as getNetworkName
+    { networkToPtr `Network' } -> `String' #}
+
+{# fun virNetworkGetXMLDesc as getNetworkXML
+    { networkToPtr `Network', 
+      flags2int    `[NetworkXMLFlags]' } -> `String' #}
 
