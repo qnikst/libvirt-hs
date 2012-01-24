@@ -17,6 +17,7 @@ module System.LibVirt
    -- * Connection management functions
    initialize,
    F.openConnection, closeConnection,
+   withConnection,
 
    -- * Domains management functions
    runningDomainsCount, definedDomainsCount,
@@ -61,6 +62,13 @@ initialize = exceptionOnMinusOne F.initialize
 
 closeConnection :: Connection -> IO Int
 closeConnection = exceptionOnMinusOne . F.closeConnection
+
+withConnection :: String -> (Connection -> IO a) -> IO a
+withConnection uri fn = do
+  conn <- F.openConnection uri
+  result <- fn conn
+  closeConnection conn
+  return result
 
 runningDomainsCount :: Connection -> IO Int
 runningDomainsCount = exceptionOnMinusOne . F.runningDomainsCount
