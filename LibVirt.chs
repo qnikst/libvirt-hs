@@ -92,12 +92,12 @@ data ConnectCredential = ConnectCredential {
 
 {# fun virConnectClose as closeConnection { connectionToPtr `Connection' } -> `Int' #}
 
-{# fun virConnectNumOfDomains as domainsCount { connectionToPtr `Connection' } -> `Int' #}
+{# fun virConnectNumOfDomains as runningDomainsCount { connectionToPtr `Connection' } -> `Int' #}
 
 type DomainID = CInt
 
-domainsIDs :: Connection -> IO [DomainID]
-domainsIDs conn = do
+runningDomainsIDs :: Connection -> IO [DomainID]
+runningDomainsIDs conn = do
   cn <- {# call virConnectNumOfDomains #} (connectionToPtr conn)
   let n = fromIntegral cn
   r <- allocaArray n $ \arr -> do
@@ -106,7 +106,20 @@ domainsIDs conn = do
           peekArray n arr
   return r
 
+definedDomainsNames :: Connection -> IO [String]
+definedDomainsNames conn = do
+  cn <- {# call virConnectNumOfDefinedDomains #} (connectionToPtr conn)
+  let n = fromIntegral cn
+  allocaArray n $ \nptr -> do
+    {# call virConnectListDefinedDomains #}
+        (connectionToPtr conn) nptr cn
+    mapM peekCString =<< peekArray n nptr
+
 {# fun virDomainLookupByID as lookupDomainID { connectionToPtr `Connection', id `DomainID' } -> `Domain' ptrToDomain #}
+
+{# fun virDomainLookupByName as lookupDomainName { connectionToPtr `Connection', `String' } -> `Domain' ptrToDomain #}
+
+{# fun virConnectNumOfDefinedDomains as definedDomainsCount { connectionToPtr `Connection' } -> `Int' #}
 
 getDomainInfo :: Domain -> IO DomainInfo
 getDomainInfo (Domain dptr) = do

@@ -6,12 +6,16 @@ import LibVirt
 main = do
   initialize
   c <- openConnection "qemu:///system"
-  n <- domainsCount c
-  print n
-  ids <- domainsIDs c
-  print ids
-  forM_ ids $ \i -> do
-    di <- getDomainInfo =<< lookupDomainID c i
-    print di
+
+  putStrLn $ "All domains:"
+  names <- definedDomainsNames c
+  forM_ names $ \name -> do
+    putStrLn $ "  Domain: " ++ name
+    di <- getDomainInfo =<< lookupDomainName c name
+    putStrLn $ "  Info: " ++ show di
+
+  nr <- runningDomainsCount c
+  putStrLn $ "Number of running domains: " ++ show nr
+
   closeConnection c
   return ()
