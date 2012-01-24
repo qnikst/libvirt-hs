@@ -1,0 +1,9 @@
+*.hi
+*.o
+*.chi
+*.chs.h
+*.swp
+LibVirt.hs
+dist/
+cabal-dev/
+Test
