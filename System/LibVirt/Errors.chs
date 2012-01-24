@@ -22,9 +22,9 @@ data Error = Error {
   veLevel :: ErrorLevel,
   veConnect :: Connection,
   veDom :: Domain,
-  veStr1 :: String,
-  veStr2 :: String,
-  veStr3 :: String,
+  veStr1 :: Maybe String,
+  veStr2 :: Maybe String,
+  veStr3 :: Maybe String,
   veInt1 :: Int,
   veInt2 :: Int,
   veNet :: Network }
@@ -34,8 +34,15 @@ data Error = Error {
 
 {# enum ErrorNumber {underscoreToCase} deriving (Eq, Show) #}
 
-convertError :: Ptr () -> IO Error
-convertError ptr = do
+peekCString' :: CString -> IO (Maybe String)
+peekCString' ptr
+  | ptr == nullPtr = return Nothing
+  | otherwise = Just `fmap` peekCString ptr
+
+convertError :: Ptr () -> IO (Maybe Error)
+convertError ptr
+  | ptr == nullPtr = return Nothing
+  | otherwise = do
   let err = castPtr ptr :: VirtErrorPtr
   code <- {# get Error->code #} err
   domain <- {# get Error->domain #} err
@@ -43,13 +50,13 @@ convertError ptr = do
   level <- {# get Error->level #} err
   conn <- {# get Error->conn #} err
   dom <- {# get Error->dom #} err
-  str1 <- peekCString =<< {# get Error->str1 #} err
-  str2 <- peekCString =<< {# get Error->str2 #} err
-  str3 <- peekCString =<< {# get Error->str3 #} err
+  str1 <- peekCString' =<< {# get Error->str1 #} err
+  str2 <- peekCString' =<< {# get Error->str2 #} err
+  str3 <- peekCString' =<< {# get Error->str3 #} err
   int1 <- {# get Error->int1 #} err
   int2 <- {# get Error->int2 #} err
   net <- {# get Error->net #} err
-  return $ Error {
+  return $ Just $ Error {
              veCode = toEnum $ fromIntegral code,
              veDomain = toEnum $ fromIntegral domain,
              veMessage = message,
@@ -63,5 +70,5 @@ convertError ptr = do
              veInt2 = fromIntegral int2,
              veNet = ptrToNetwork net }
 
-{# fun virGetLastError as getLastError { } -> `Error' convertError* #}
+{# fun virGetLastError as getLastError { } -> `Maybe Error' convertError* #}
 
