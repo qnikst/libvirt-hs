@@ -120,7 +120,7 @@ data ConnectCredential = ConnectCredential {
 {# fun virInitialize as initialize { } -> `Int' exceptionOnMinusOne* #}
 
 {# fun virConnectOpen as openConnection
-    { `String' } -> `Connection' ptrToConnection #}
+    { `String' } -> `Connection' ptrToConnection* #}
 
 {# fun virConnectClose as closeConnection
     { connectionToPtr `Connection' } -> `Int' exceptionOnMinusOne* #}
@@ -152,11 +152,11 @@ definedDomainsNames conn = do
 
 {# fun virDomainLookupByID as lookupDomainID
     { connectionToPtr `Connection',
-      id              `DomainID'    } -> `Domain' ptrToDomain #}
+      id              `DomainID'    } -> `Domain' ptrToDomain* #}
 
 {# fun virDomainLookupByName as lookupDomainName
     { connectionToPtr `Connection',
-                      `String'      } -> `Domain' ptrToDomain #}
+                      `String'      } -> `Domain' ptrToDomain* #}
 
 {# fun virConnectNumOfDefinedDomains as definedDomainsCount
     { connectionToPtr `Connection' } -> `Int' exceptionOnMinusOne* #}
@@ -179,7 +179,7 @@ getDomainInfo dptr = do
 
 {# fun virDomainDefineXML as defineDomainXML
     { connectionToPtr `Connection',
-                      `String'      } -> `Domain' ptrToDomain #}
+                      `String'      } -> `Domain' ptrToDomain* #}
 
 {# fun virDomainUndefine as undefineDomain
     { domainToPtr `Domain' } -> `Int' exceptionOnMinusOne* #}
@@ -190,7 +190,7 @@ getDomainInfo dptr = do
 {# fun virDomainCreateXML as createDomainXML
     { connectionToPtr `Connection',
                       `String',
-      flags2int       `[DomainCreateFlags]' } -> `Domain' ptrToDomain #}
+      flags2int       `[DomainCreateFlags]' } -> `Domain' ptrToDomain* #}
 
 {# fun virDomainGetXMLDesc as getDomainXML
     { domainToPtr `Domain',
@@ -227,7 +227,7 @@ getDomainInfo dptr = do
                       `String'      } -> `Int' exceptionOnMinusOne* #}
 
 {# fun virNetworkGetConnect as getNetworkConnection
-    { networkToPtr `Network' } -> `Connection' ptrToConnection #}
+    { networkToPtr `Network' } -> `Connection' ptrToConnection* #}
 
 {# fun virConnectNumOfNetworks as runningNetworksCount
     { connectionToPtr `Connection' } -> `Int' exceptionOnMinusOne* #}
