@@ -6,6 +6,7 @@
 
 module LibVirt where
 
+import Data.Bits
 import Foreign
 import Foreign.C.Types
 import Foreign.C.String
@@ -88,11 +89,14 @@ data ConnectCredential = ConnectCredential {
 
 {# fun virInitialize as initialize { } -> `Int' #}
 
-{# fun virConnectOpen as openConnection { `String' } -> `Connection' ptrToConnection #}
+{# fun virConnectOpen as openConnection
+    { `String' } -> `Connection' ptrToConnection #}
 
-{# fun virConnectClose as closeConnection { connectionToPtr `Connection' } -> `Int' #}
+{# fun virConnectClose as closeConnection
+    { connectionToPtr `Connection' } -> `Int' #}
 
-{# fun virConnectNumOfDomains as runningDomainsCount { connectionToPtr `Connection' } -> `Int' #}
+{# fun virConnectNumOfDomains as runningDomainsCount
+    { connectionToPtr `Connection' } -> `Int' #}
 
 type DomainID = CInt
 
@@ -115,45 +119,63 @@ definedDomainsNames conn = do
         (connectionToPtr conn) nptr cn
     mapM peekCString =<< peekArray n nptr
 
-{# fun virDomainLookupByID as lookupDomainID { connectionToPtr `Connection', id `DomainID' } -> `Domain' ptrToDomain #}
+{# fun virDomainLookupByID as lookupDomainID
+    { connectionToPtr `Connection',
+      id              `DomainID'    } -> `Domain' ptrToDomain #}
 
-{# fun virDomainLookupByName as lookupDomainName { connectionToPtr `Connection', `String' } -> `Domain' ptrToDomain #}
+{# fun virDomainLookupByName as lookupDomainName
+    { connectionToPtr `Connection',
+                      `String'      } -> `Domain' ptrToDomain #}
 
-{# fun virConnectNumOfDefinedDomains as definedDomainsCount { connectionToPtr `Connection' } -> `Int' #}
+{# fun virConnectNumOfDefinedDomains as definedDomainsCount
+    { connectionToPtr `Connection' } -> `Int' #}
 
 getDomainInfo :: Domain -> IO DomainInfo
 getDomainInfo (Domain dptr) = do
   allocaBytes {# sizeof virDomainInfo #} $ \iptr -> do
          i <- {# call virDomainGetInfo #} (castPtr dptr) iptr
-         state <- {# get DomainInfo->state #} iptr
-         maxmem <- {# get DomainInfo->maxMem #} iptr
-         memory <- {# get DomainInfo->memory #} iptr
-         ncpus <- {# get DomainInfo->nrVirtCpu #} iptr
-         cputime <- {# get DomainInfo->cpuTime #} iptr
+         state   <- {# get DomainInfo->state #}     iptr
+         maxmem  <- {# get DomainInfo->maxMem #}    iptr
+         memory  <- {# get DomainInfo->memory #}    iptr
+         ncpus   <- {# get DomainInfo->nrVirtCpu #} iptr
+         cputime <- {# get DomainInfo->cpuTime #}   iptr
          return $ DomainInfo {
-                    diState = cuchar2state state,
-                    diMaxMem = fromIntegral maxmem,
-                    diMemory = fromIntegral memory,
+                    diState     = cuchar2state state,
+                    diMaxMem    = fromIntegral maxmem,
+                    diMemory    = fromIntegral memory,
                     diNrVirtCPU = fromIntegral ncpus,
-                    diCPUTime = fromIntegral cputime }
+                    diCPUTime   = fromIntegral cputime }
 
-{# fun virDomainCreate as createDomain { domainToPtr `Domain' } -> `Int' #}
+{# fun virDomainCreate as createDomain
+    { domainToPtr `Domain' } -> `Int' #}
 
-{# fun virDomainShutdown as shutdownDomain { domainToPtr `Domain' } -> `Int' #}
+{# fun virDomainShutdown as shutdownDomain
+    { domainToPtr `Domain' } -> `Int' #}
 
-{# fun virDomainReboot as rebootDomain { domainToPtr `Domain', id `CUInt' } -> `Int' #}
+{# fun virDomainReboot as rebootDomain
+    { domainToPtr `Domain',
+      id          `CUInt'  } -> `Int' #}
 
-{# fun virDomainDestroy as destroyDomain { domainToPtr `Domain' } -> `Int' #}
+{# fun virDomainDestroy as destroyDomain
+    { domainToPtr `Domain' } -> `Int' #}
 
-{# fun virDomainRef as refDomain { domainToPtr `Domain' } -> `Int' #}
+{# fun virDomainRef as refDomain
+    { domainToPtr `Domain' } -> `Int' #}
 
-{# fun virDomainFree as freeDomain { domainToPtr `Domain' } -> `Int' #}
+{# fun virDomainFree as freeDomain
+    { domainToPtr `Domain' } -> `Int' #}
 
-{# fun virDomainSuspend as suspendDomain { domainToPtr `Domain' } -> `Int' #}
+{# fun virDomainSuspend as suspendDomain
+    { domainToPtr `Domain' } -> `Int' #}
 
-{# fun virDomainResume as resumeDomain { domainToPtr `Domain' } -> `Int' #}
+{# fun virDomainResume as resumeDomain
+    { domainToPtr `Domain' } -> `Int' #}
 
-{# fun virDomainSave as saveDomain { domainToPtr `Domain', `String' } -> `Int' #}
+{# fun virDomainSave as saveDomain
+    { domainToPtr `Domain',
+                  `String' } -> `Int' #}
 
-{# fun virDomainRestore as restoreDomain { connectionToPtr `Connection', `String' } -> `Int' #}
+{# fun virDomainRestore as restoreDomain
+    { connectionToPtr `Connection',
+                      `String'      } -> `Int' #}
 
