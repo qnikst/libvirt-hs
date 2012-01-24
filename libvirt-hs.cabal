@@ -33,11 +33,12 @@ Cabal-version:       >=1.6
 Library
   Exposed-modules:     System.LibVirt
                        System.LibVirt.Foreign
+                       System.LibVirt.Errors
   
   -- Packages needed in order to build this package.
   Build-depends:       base >= 4 && < 5, syb >= 0.3.3
   
-  -- Other-modules:       
+  Other-modules:       System.LibVirt.Internal
   
   Build-tools:         c2hs
 
