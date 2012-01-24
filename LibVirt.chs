@@ -28,12 +28,15 @@ ptrToDomain ptr = Domain (castPtr ptr)
 domainToPtr :: Domain -> Ptr ()
 domainToPtr (Domain ptr) = castPtr ptr
 
+cuchar2state :: CUChar -> DomainState
+cuchar2state c = toEnum (fromIntegral c)
+
 data DomainInfo = DomainInfo {
-  diState :: CUChar,
-  diMaxMem :: CULong,
-  diMemory :: CULong,
-  diNrVirtCPU :: CUShort,
-  diCPUTime :: CULLong }
+  diState :: DomainState,
+  diMaxMem :: Integer,
+  diMemory :: Integer,
+  diNrVirtCPU :: Int,
+  diCPUTime :: Integer }
   deriving (Eq, Show)
 
 {# pointer *virDomainInfo as DomainInfoPtr -> DomainInfo #}
@@ -105,9 +108,20 @@ domainsIDs conn = do
 
 {# fun virDomainLookupByID as lookupDomainID { connectionToPtr `Connection', id `DomainID' } -> `Domain' ptrToDomain #}
 
-{# fun virDomainGetInfo as getDomainInfo { domainToPtr `Domain', alloca- `DomainInfoPtr' } -> `Int' #}
-
 getDomainInfo :: Domain -> IO DomainInfo
 getDomainInfo (Domain dptr) = do
+  allocaBytes {# sizeof virDomainInfo #} $ \iptr -> do
+         i <- {# call virDomainGetInfo #} (castPtr dptr) iptr
+         state <- {# get DomainInfo->state #} iptr
+         maxmem <- {# get DomainInfo->maxMem #} iptr
+         memory <- {# get DomainInfo->memory #} iptr
+         ncpus <- {# get DomainInfo->nrVirtCpu #} iptr
+         cputime <- {# get DomainInfo->cpuTime #} iptr
+         return $ DomainInfo {
+                    diState = cuchar2state state,
+                    diMaxMem = fromIntegral maxmem,
+                    diMemory = fromIntegral memory,
+                    diNrVirtCPU = fromIntegral ncpus,
+                    diCPUTime = fromIntegral cputime }
 
 

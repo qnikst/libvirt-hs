@@ -1,4 +1,6 @@
 
+import Control.Monad
+
 import LibVirt
 
 main = do
@@ -8,5 +10,8 @@ main = do
   print n
   ids <- domainsIDs c
   print ids
+  forM_ ids $ \i -> do
+    di <- getDomainInfo =<< lookupDomainID c i
+    print di
   closeConnection c
   return ()
