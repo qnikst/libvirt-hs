@@ -32,6 +32,9 @@ domainToPtr (Domain ptr) = castPtr ptr
 cuchar2state :: CUChar -> DomainState
 cuchar2state c = toEnum (fromIntegral c)
 
+flags2int :: (Enum f, Num a) => [f] -> a
+flags2int list = fromIntegral $ foldr (.|.) 0 (map fromEnum list)
+
 data DomainInfo = DomainInfo {
   diState :: DomainState,
   diMaxMem :: Integer,
@@ -44,6 +47,7 @@ data DomainInfo = DomainInfo {
 
 {# enum DomainState {underscoreToCase} deriving (Eq, Show) #}
 {# enum DomainCreateFlags {underscoreToCase} deriving (Eq, Show) #}
+{# enum DomainXMLFlags {underscoreToCase} deriving (Eq, Show) #}
 
 {# pointer *virStreamPtr as Steram newtype #}
 
@@ -146,8 +150,24 @@ getDomainInfo (Domain dptr) = do
                     diNrVirtCPU = fromIntegral ncpus,
                     diCPUTime   = fromIntegral cputime }
 
+{# fun virDomainDefineXML as defineDomainXML
+    { connectionToPtr `Connection',
+                      `String'      } -> `Domain' ptrToDomain #}
+
+{# fun virDomainUndefine as undefineDomain
+    { domainToPtr `Domain' } -> `Int' #}
+
 {# fun virDomainCreate as createDomain
     { domainToPtr `Domain' } -> `Int' #}
+
+{# fun virDomainCreateXML as createDomainXML
+    { connectionToPtr `Connection',
+                      `String',
+      flags2int       `[DomainCreateFlags]' } -> `Domain' ptrToDomain #}
+
+{# fun virDomainGetXMLDesc as getDomainXML
+    { domainToPtr `Domain',
+      flags2int   `[DomainXMLFlags]' } -> `String' #}
 
 {# fun virDomainShutdown as shutdownDomain
     { domainToPtr `Domain' } -> `Int' #}
