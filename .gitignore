@@ -5,6 +5,7 @@
 *.swp
 System/LibVirt/Foreign.hs
 System/LibVirt/Errors.hs
+System/LibVirt/Internal.hs
 dist/
 cabal-dev/
 Test

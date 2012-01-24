@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ForeignFunctionInterface, ScopedTypeVariables, StandaloneDeriving, DeriveDataTypeable #-}
 
 {# context lib="virt" prefix="vir" #}
 
@@ -6,14 +6,21 @@
 
 module System.LibVirt.Errors where
 
+import qualified Control.Exception as E
+import Data.Generics
 import Foreign
 import Foreign.C.Types
 import Foreign.C.String
 
-{# import System.LibVirt.Foreign #}
+{# import System.LibVirt.Internal #}
 
 {# enum ErrorLevel {underscoreToCase} deriving (Eq, Show) #}
+deriving instance Data ErrorLevel
+deriving instance Typeable ErrorLevel
+
 {# enum ErrorDomain {underscoreToCase} deriving (Eq, Show) #}
+deriving instance Data ErrorDomain
+deriving instance Typeable ErrorDomain
 
 data Error = Error {
   veCode :: ErrorNumber,
@@ -28,11 +35,16 @@ data Error = Error {
   veInt1 :: Int,
   veInt2 :: Int,
   veNet :: Network }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Data, Typeable)
+
+instance E.Exception Error
 
 {# pointer *virErrorPtr as VirtErrorPtr -> Error #}
 
 {# enum ErrorNumber {underscoreToCase} deriving (Eq, Show) #}
+
+deriving instance Data ErrorNumber
+deriving instance Typeable ErrorNumber
 
 peekCString' :: CString -> IO (Maybe String)
 peekCString' ptr
@@ -71,4 +83,12 @@ convertError ptr
              veNet = ptrToNetwork net }
 
 {# fun virGetLastError as getLastError { } -> `Maybe Error' convertError* #}
+
+catchVirtError :: IO a -> (Error -> IO a) -> IO a
+catchVirtError m f =
+  m `E.catch` (\(e :: E.SomeException) -> do
+                  merr <- getLastError  
+                  case merr of
+                    Just err -> f err
+                    Nothing -> E.throw e )
 

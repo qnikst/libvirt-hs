@@ -22,8 +22,5 @@ main = do
   winxp <- lookupDomainName c "WinXP"
   createDomain winxp
 
-  err <- getLastError
-  print err
-
   closeConnection c
   return ()

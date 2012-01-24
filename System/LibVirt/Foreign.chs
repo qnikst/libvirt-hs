@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface, StandaloneDeriving #-}
+{-# LANGUAGE ForeignFunctionInterface, StandaloneDeriving, DeriveDataTypeable #-}
 
 {# context lib="virt" prefix="vir" #}
 
@@ -39,44 +39,18 @@ module System.LibVirt.Foreign
    refDomain, freeDomain,
 
    -- * Networks management
-   getNetworkConnection,
-
-   -- * Internal low-level functions
-   ptrToConnection, ptrToDomain, ptrToNetwork
+   getNetworkConnection
   ) where
 
 import Data.Bits
+import Data.Generics
 import Foreign
 import Foreign.C.Types
 import Foreign.C.String
 
+{# import System.LibVirt.Internal #}
+
 cIntConv = fromIntegral
-
-{# pointer *virConnectPtr as Connection newtype #}
-
-deriving instance Eq Connection
-
-instance Show Connection where
-  show (Connection ptr) = "<Connection: " ++ show ptr ++ ">"
-
-ptrToConnection :: Ptr () -> Connection
-ptrToConnection ptr = Connection (castPtr ptr)
-
-connectionToPtr :: Connection -> Ptr ()
-connectionToPtr (Connection ptr) = castPtr ptr
-
-{# pointer *virDomainPtr as Domain newtype #}
-
-deriving instance Eq Domain
-
-instance Show Domain where
-  show (Domain ptr) = "<Domain: " ++ show ptr ++ ">"
-
-ptrToDomain :: Ptr () -> Domain
-ptrToDomain ptr = Domain (castPtr ptr)
-
-domainToPtr :: Domain -> Ptr ()
-domainToPtr (Domain ptr) = castPtr ptr
 
 cuchar2state :: CUChar -> DomainState
 cuchar2state c = toEnum (fromIntegral c)
@@ -113,19 +87,6 @@ data SecurityModel = SecurityModel {
   deriving (Eq, Show)
 
 {# pointer *virSecurityModelPtr as SecurityModelPtr -> SecurityModel #}
-
-{# pointer *virNetworkPtr as Network newtype #}
-
-deriving instance Eq Network
-
-instance Show Network where
-  show (Network ptr) = "<Network: " ++ show ptr ++ ">"
-
-ptrToNetwork :: Ptr () -> Network
-ptrToNetwork ptr = Network (castPtr ptr)
-
-networkToPtr :: Network -> Ptr ()
-networkToPtr (Network ptr) = castPtr ptr
 
 data NodeInfo = NodeInfo {
   niModel :: String,
@@ -197,9 +158,9 @@ definedDomainsNames conn = do
     { connectionToPtr `Connection' } -> `Int' #}
 
 getDomainInfo :: Domain -> IO DomainInfo
-getDomainInfo (Domain dptr) = do
+getDomainInfo dptr = do
   allocaBytes {# sizeof virDomainInfo #} $ \iptr -> do
-         i <- {# call virDomainGetInfo #} (castPtr dptr) iptr
+         i <- {# call virDomainGetInfo #} (domainToPtr dptr) iptr
          state   <- {# get DomainInfo->state #}     iptr
          maxmem  <- {# get DomainInfo->maxMem #}    iptr
          memory  <- {# get DomainInfo->memory #}    iptr
