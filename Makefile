@@ -4,7 +4,7 @@ C2HS=c2hs
 
 all: Test
 
-Test: Test.hs LibVirt.hs
+Test: Test.hs System/LibVirt.hs System/LibVirt/Foreign.hs
 	$(GHC) $<
 
 %.hs: %.chs

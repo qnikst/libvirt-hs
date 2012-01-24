@@ -1,7 +1,7 @@
 
 import Control.Monad
 
-import LibVirt
+import System.LibVirt
 
 main = do
   initialize

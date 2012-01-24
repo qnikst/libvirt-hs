@@ -4,7 +4,40 @@
 
 #include <libvirt/libvirt.h>
 
-module LibVirt where
+module System.LibVirt.Foreign
+  (-- * Types
+   Connection, Domain, 
+   DomainID,
+   DomainInfo (..),
+   DomainState (..),
+   Stream,
+   DomainCreateFlags (..),
+   DomainXMLFlags (..),
+   SecurityLabel (..),
+   SecurityModel (..),
+   NodeInfo (..),
+   SchedParameterType (..),
+   ConnectCredential (..),
+
+   -- * Connection management functions
+   initialize,
+   openConnection, closeConnection,
+
+   -- * Domains management functions
+   runningDomainsCount, definedDomainsCount,
+   runningDomainsIDs, definedDomainsNames,
+   lookupDomainID, lookupDomainName,
+   getDomainInfo, getDomainXML,
+   defineDomainXML, undefineDomain,
+
+   -- * Domains control
+   createDomain, createDomainXML,
+   destroyDomain, 
+   shutdownDomain, rebootDomain,
+   suspendDomain, resumeDomain,
+   saveDomain, restoreDomain,
+   refDomain, freeDomain
+  ) where
 
 import Data.Bits
 import Foreign
@@ -49,7 +82,7 @@ data DomainInfo = DomainInfo {
 {# enum DomainCreateFlags {underscoreToCase} deriving (Eq, Show) #}
 {# enum DomainXMLFlags {underscoreToCase} deriving (Eq, Show) #}
 
-{# pointer *virStreamPtr as Steram newtype #}
+{# pointer *virStreamPtr as Stream newtype #}
 
 data SecurityLabel = SecurityLabel {
   slLabel :: String,
