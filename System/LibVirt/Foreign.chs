@@ -49,6 +49,7 @@ import Foreign.C.Types
 import Foreign.C.String
 
 {# import System.LibVirt.Internal #}
+{# import System.LibVirt.Errors #}
 
 cIntConv = fromIntegral
 

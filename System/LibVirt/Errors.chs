@@ -92,3 +92,14 @@ catchVirtError m f =
                     Just err -> f err
                     Nothing -> E.throw e )
 
+exceptionOnMinusOne :: IO Int -> IO Int
+exceptionOnMinusOne x = do
+  i <- x
+  if i == -1
+    then do
+         merr <- getLastError
+         case merr of
+           Just err -> E.throw err
+           Nothing -> return i
+    else return i
+
