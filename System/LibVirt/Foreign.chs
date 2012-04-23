@@ -29,6 +29,7 @@ module System.LibVirt.Foreign
    lookupDomainID, lookupDomainName,
    getDomainInfo, getDomainXML,
    defineDomainXML, undefineDomain,
+   getDomainID, getDomainName,
 
    -- * Domains control
    createDomain, createDomainXML,
@@ -162,6 +163,12 @@ definedDomainsNames conn = do
 {# fun virDomainLookupByID as lookupDomainID
     { connectionToPtr `Connection',
       id              `DomainID'    } -> `Domain' ptrToDomain* #}
+
+{# fun virDomainGetID as getDomainID
+    { domainToPtr `Domain' } -> `DomainID' cIntConv #}
+
+{# fun virDomainGetName as getDomainName
+    { domainToPtr `Domain' } -> `String' #}
 
 {# fun virDomainLookupByName as lookupDomainName
     { connectionToPtr `Connection',
