@@ -7,11 +7,10 @@ module System.LibVirt
 
 import System.LibVirt.Foreign
 import System.LibVirt.Errors
+import Control.Exception(finally)
 
 withConnection :: String -> (Connection -> IO a) -> IO a
 withConnection uri fn = do
   conn <- openConnection uri
-  result <- fn conn
-  closeConnection conn
-  return result
+  finally (fn conn) (closeConnection conn)
 
