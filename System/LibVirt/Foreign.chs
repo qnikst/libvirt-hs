@@ -18,10 +18,23 @@ module System.LibVirt.Foreign
    NodeInfo (..),
    SchedParameterType (..),
    ConnectCredential (..),
+   DomainEventID (..),
+   DomainEventType (..),
+   DomainEventDefinedDetailType (..),
+   DomainEventUndefinedDetailType (..),
+   DomainEventStartedDetailType (..),
+   DomainEventSuspendedDetailType (..),
+   DomainEventResumedDetailType (..),
+   DomainEventStoppedDetailType (..),
+   DomainEventShutdownDetailType (..),
+   FreeCallback,
+   ConnectDomainEventGenericCallback,
+   ConnectDomainEventCallback,
 
    -- * Connection management functions
    initialize,
    openConnection, closeConnection,
+   connectSetKeepAlive,
 
    -- * Domains management functions
    runningDomainsCount, definedDomainsCount,
@@ -33,7 +46,7 @@ module System.LibVirt.Foreign
 
    -- * Domains control
    createDomain, createDomainXML,
-   destroyDomain, 
+   destroyDomain,
    shutdownDomain, rebootDomain,
    suspendDomain, resumeDomain,
    saveDomain, restoreDomain,
@@ -49,7 +62,18 @@ module System.LibVirt.Foreign
    createNetwork,
    refNetwork, freeNetwork,
    getNetworkName,
-   getNetworkXML
+   getNetworkXML,
+
+   -- * callback management
+   eventRegisterDefaultImpl,
+   eventRunDefaultImpl,
+   connectDomainEventRegister,
+   connectDomainEventRegisterAny,
+   connectDomainEventDeregisterAny,
+   mkConnectDomainEventGenericCallback,
+   mkConnectDomainEventCallback,
+   mkFreeCallback
+
   ) where
 
 import Data.Bits
@@ -69,6 +93,9 @@ cuchar2state c = toEnum (fromIntegral c)
 flags2int :: (Enum f, Num a) => [f] -> a
 flags2int list = fromIntegral $ foldr (.|.) 0 (map fromEnum list)
 
+flag2int :: (Enum f, Num a) => f -> a
+flag2int = fromIntegral . fromEnum
+
 data DomainInfo = DomainInfo {
   diState :: DomainState,
   diMaxMem :: Integer,
@@ -82,6 +109,16 @@ data DomainInfo = DomainInfo {
 {# enum DomainState {underscoreToCase} deriving (Eq, Show) #}
 {# enum DomainCreateFlags {underscoreToCase} deriving (Eq, Show) #}
 {# enum DomainXMLFlags {underscoreToCase} deriving (Eq, Show) #}
+{# enum DomainEventID {underscoreToCase} deriving (Eq, Show) #}
+{# enum DomainEventType {underscoreToCase} deriving (Eq, Show) #}
+{# enum DomainEventDefinedDetailType {underscoreToCase} deriving (Eq, Show) #}
+{# enum DomainEventUndefinedDetailType {underscoreToCase} deriving (Eq, Show) #}
+{# enum DomainEventStartedDetailType {underscoreToCase} deriving (Eq, Show) #}
+{# enum DomainEventSuspendedDetailType {underscoreToCase} deriving (Eq, Show) #}
+{# enum DomainEventResumedDetailType {underscoreToCase} deriving (Eq, Show) #}
+{# enum DomainEventStoppedDetailType {underscoreToCase} deriving (Eq, Show) #}
+{# enum DomainEventShutdownDetailType {underscoreToCase} deriving (Eq, Show) #}
+
 
 data NetworkXMLFlags = NetworkXML
   deriving (Eq, Show, Enum)
@@ -304,3 +341,54 @@ withCUString str fn = withCString str (fn . castPtr)
     { networkToPtr `Network', 
       flags2int    `[NetworkXMLFlags]' } -> `String' #}
 
+{# fun virConnectDomainEventRegisterAny as connectDomainEventRegisterAny
+    `(Storable a)' =>
+    { connectionToPtr `Connection',
+      domainToPtr `Domain',
+      flag2int `DomainEventID',
+      castFunPtr `FunPtr (ConnectDomainEventCallback a)',
+      castPtr `Ptr a',
+      id `FunPtr FreeCallback'
+      } -> `Int' exceptionOnMinusOne* #}
+
+{# fun virConnectDomainEventDeregisterAny as connectDomainEventDeregisterAny
+    { connectionToPtr `Connection',
+      fromIntegral `Int'
+    } -> `Int' exceptionOnMinusOne* #}
+
+{# fun virEventRegisterDefaultImpl as eventRegisterDefaultImpl
+     { } -> `Int'exceptionOnMinusOne* #}
+
+{# fun virConnectSetKeepAlive as connectSetKeepAlive
+      { connectionToPtr `Connection',
+        id     `CInt',
+        id     `CUInt'
+      } -> `Int' exceptionOnMinusOne* #}
+
+{# fun virConnectDomainEventRegister as connectDomainEventRegister
+      { connectionToPtr `Connection',
+        castFunPtr `FunPtr (ConnectDomainEventCallback a)',
+        castPtr `Ptr a',
+        id `FunPtr FreeCallback'
+      } -> `Int' exceptionOnMinusOne* #}
+
+{# fun virEventRunDefaultImpl as eventRunDefaultImpl
+      {} -> `Int' exceptionOnMinusOne* #}
+
+
+type ConnectDomainEventGenericCallback a = Connection -> Domain -> Ptr a -> IO ()
+type FreeCallback = Ptr () -> IO ()
+
+
+type ConnectDomainEventCallback a = Connection -> Domain -> Int -> Int -> Ptr a -> IO ()
+
+foreign import ccall "wrapper"
+    mkConnectDomainEventCallback :: ConnectDomainEventCallback a
+                                 -> IO (FunPtr (ConnectDomainEventCallback a))
+
+foreign import ccall "wrapper"
+  mkConnectDomainEventGenericCallback :: ConnectDomainEventGenericCallback a
+                                      -> IO (FunPtr (ConnectDomainEventGenericCallback a))
+
+foreign import ccall "wrapper"
+  mkFreeCallback :: FreeCallback -> IO (FunPtr FreeCallback)
