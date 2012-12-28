@@ -372,7 +372,7 @@ withCUString str fn = withCString str (fn . castPtr)
         id `FunPtr FreeCallback'
       } -> `Int' exceptionOnMinusOne* #}
 
-{# fun virEventRunDefaultImpl as eventRunDefaultImpl
+{# fun safe virEventRunDefaultImpl as eventRunDefaultImpl
       {} -> `Int' exceptionOnMinusOne* #}
 
 

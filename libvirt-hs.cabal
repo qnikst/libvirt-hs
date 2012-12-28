@@ -1,5 +1,5 @@
 Name:                libvirt-hs
-Version:             0.1
+Version:             0.1.1
 
 Synopsis:            FFI bindings to libvirt virtualization API (http://libvirt.org)
 
