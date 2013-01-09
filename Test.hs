@@ -19,7 +19,8 @@ main = do
     ["stop",  domain]    -> initialize >> withConnection uri (stop  domain)
     ["destroy", domain]  -> initialize >> withConnection uri (destroy domain)
     ["callback", domain] -> initialize >> eventRegisterDefaultImpl >> withConnection uri (doTest1 domain)
-    other -> putStrLn "Usage: Test <test | list-nets | start DOMAIN | stop DOMAIN | destroy DOMAIN | callback DOMAIN>"
+    ["capabilities"]     -> initialize >> withConnection uri (\c -> connectGetCapabilities c >>= putStrLn)
+    other -> putStrLn "Usage: Test <test | list-nets | start DOMAIN | stop DOMAIN | destroy DOMAIN | callback DOMAIN | capabilities>"
 
 start :: String -> Connection -> IO ()
 start domain conn = do

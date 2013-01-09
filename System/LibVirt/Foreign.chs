@@ -35,6 +35,7 @@ module System.LibVirt.Foreign
    initialize,
    openConnection, closeConnection,
    connectSetKeepAlive,
+   connectGetCapabilities,
 
    -- * Domains management functions
    runningDomainsCount, definedDomainsCount,
@@ -375,6 +376,10 @@ withCUString str fn = withCString str (fn . castPtr)
 {# fun virEventRunDefaultImpl as eventRunDefaultImpl
       {} -> `Int' exceptionOnMinusOne* #}
 
+-- | Provides capabilities of the hypervisor / driver.
+{# fun virConnectGetCapabilities as connectGetCapabilities
+      { connectionToPtr `Connection' } -> `String' #}
+
 
 type ConnectDomainEventGenericCallback a = Connection -> Domain -> Ptr a -> IO ()
 type FreeCallback = Ptr () -> IO ()
@@ -392,3 +397,4 @@ foreign import ccall "wrapper"
 
 foreign import ccall "wrapper"
   mkFreeCallback :: FreeCallback -> IO (FunPtr FreeCallback)
+
