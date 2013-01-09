@@ -378,7 +378,7 @@ withCUString str fn = withCString str (fn . castPtr)
 
 -- | Provides capabilities of the hypervisor / driver.
 {# fun virConnectGetCapabilities as connectGetCapabilities
-      { connectionToPtr `Connection' } -> `String' #}
+      { connectionToPtr `Connection' } -> `String' unmarshalString* #}
 
 
 type ConnectDomainEventGenericCallback a = Connection -> Domain -> Ptr a -> IO ()
@@ -398,3 +398,7 @@ foreign import ccall "wrapper"
 foreign import ccall "wrapper"
   mkFreeCallback :: FreeCallback -> IO (FunPtr FreeCallback)
 
+
+unmarshalString :: CString -> IO String
+unmarshalString ptr | ptr == nullPtr = return "" 
+                    | otherwise = peekCString ptr >>= \s -> free ptr >> return s
