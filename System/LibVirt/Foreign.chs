@@ -67,6 +67,7 @@ module System.LibVirt.Foreign
 
    -- * Interface operations
    connectNumOfDefinedInterfaces, connectNumOfInterfaces,
+   interfaceCreate,
 
    -- * callback management
    eventRegisterDefaultImpl,
@@ -82,9 +83,10 @@ module System.LibVirt.Foreign
 
 import Data.Bits
 import Data.Generics
-import Foreign
+import Foreign hiding (void)
 import Foreign.C.Types
 import Foreign.C.String
+import Control.Monad (void)
 
 {# import System.LibVirt.Internal #}
 {# import System.LibVirt.Errors #}
@@ -413,3 +415,14 @@ unmarshalString ptr | ptr == nullPtr = return ""
 {# fun virConnectNumOfInterfaces as connectNumOfInterfaces
     { connectionToPtr `Connection' } -> `Int' #}
     
+-- | Activate an interface (i.e. call "ifup").
+-- 
+-- If there was an open network config transaction at the time this
+-- interface was defined (that is, if @interfaceChangeBegin@ had 
+-- been called), the interface will be brought back down 
+-- (and then undefined) if @interfaceChangeRollback@ is called. p *
+-- iface:  pointer to a defined interface
+-- flags:  extra flags; not used yet, so callers should always pass 0
+-- Returns:  0 in case of success, -1 in case of error
+interfaceCreate ifs = void $ fmap exceptionOnMinusOne ({# call virInterfaceCreate #} (connectionToPtr ifs) 0)
+     

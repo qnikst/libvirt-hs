@@ -7,7 +7,7 @@
 -- | Internal types definitions and low-level functions.
 -- This module is not supposed to be imported by client code.
 module System.LibVirt.Internal
-  (Connection (..), Domain (..), Network (..)
+  (Connection (..), Domain (..), Network (..), Interface(..)
   ) where
 
 import Data.Generics
@@ -42,3 +42,8 @@ deriving instance Typeable Network
 instance Show Network where
   show (Network ptr) = "<Network: " ++ show ptr ++ ">"
 
+{# pointer *virInterfacePtr as Interface newtype #}
+
+deriving instance Eq Interface
+deriving instance Data Interface
+deriving instance Typeable Interface
