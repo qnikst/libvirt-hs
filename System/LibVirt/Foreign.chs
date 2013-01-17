@@ -65,6 +65,9 @@ module System.LibVirt.Foreign
    getNetworkName,
    getNetworkXML,
 
+   -- * Interface operations
+   connectNumOfDefinedInterfaces, connectNumOfInterfaces,
+
    -- * callback management
    eventRegisterDefaultImpl,
    eventRunDefaultImpl,
@@ -402,3 +405,11 @@ foreign import ccall "wrapper"
 unmarshalString :: CString -> IO String
 unmarshalString ptr | ptr == nullPtr = return "" 
                     | otherwise = peekCString ptr >>= \s -> free ptr >> return s
+-- | Provides the number of active interfaces on the physical host.
+{# fun virConnectNumOfDefinedInterfaces as connectNumOfDefinedInterfaces
+    { connectionToPtr `Connection' } -> `Int' #}
+
+-- | Provides the number of defined (inactive) interfaces on the physical host.
+{# fun virConnectNumOfInterfaces as connectNumOfInterfaces
+    { connectionToPtr `Connection' } -> `Int' #}
+    
