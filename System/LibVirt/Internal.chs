@@ -47,3 +47,12 @@ instance Show Network where
 deriving instance Eq Interface
 deriving instance Data Interface
 deriving instance Typeable Interface
+
+instance Show Interface where
+  show (Interface ptr) = "<Interface: " ++ show ptr ++ ">"
+
+instance Storable Interface where
+  sizeOf _ = sizeOf (undefined::Ptr ())
+  alignment _ = alignment (undefined::Ptr ())
+  peek a = peek (castPtr a) >>= return . Interface
+  poke v (Interface a) = poke (castPtr v) a

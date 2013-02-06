@@ -60,6 +60,20 @@ doTest conn = do
 
   nr <- runningDomainsCount conn
   putStrLn $ "Number of running domains: " ++ show nr
+  ni <- connectNumOfInterfaces conn
+  putStrLn $ "Number of running interfaces: " ++ show ni
+  ndi <- connectNumOfDefinedInterfaces conn
+  putStrLn $ "Number of defined interfaces: " ++ show ndi
+  ifs <- connectListAllInterfaces conn [ConnectListInterfacesInactive]
+  putStrLn $ "Inactive interfaces: "++show ifs
+  ifs' <- connectListAllInterfaces conn [ConnectListInterfacesActive]
+  putStrLn $ "Active Interfaces: "++show ifs'
+  ifs'' <- connectListAllInterfaces conn [ConnectListInterfacesActive, ConnectListInterfacesInactive]
+  putStrLn $ "All Interfaces: "++show ifs''
+  forM_ ifs' $ \t -> do mc <- interfaceGetMACString t
+                        nc <- interfaceGetName t
+                        xc <- interfaceGetXMLDesc t 0
+                        putStrLn . unwords $ ["interface", show t, "MAC is:", show mc, "Name is:", nc, xc]
 
 listNets :: Connection -> IO ()
 listNets conn = do
@@ -77,9 +91,7 @@ doTest1 domain conn = do
 
   doTest conn
   dom <- lookupDomainName conn domain
-  print $ fromEnum DomainEventIdLifecycle
   callback <- mkConnectDomainEventCallback $ \conn dom event detail _o -> do
-      print conn
       print =<< getDomainInfo dom
       let ev = toEnum event
       print ev
@@ -95,10 +107,6 @@ doTest1 domain conn = do
   callbackFree <- mkFreeCallback $ \a -> print "free"
   --start domain conn
   --threadDelay (10*1000000)
-  print callback
-  print callbackFree
-  print conn
-  print dom
   print =<< getDomainInfo dom
   connectDomainEventRegisterAny conn (dom) 
                                      DomainEventIdLifecycle

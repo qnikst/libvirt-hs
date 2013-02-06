@@ -27,6 +27,7 @@ module System.LibVirt.Foreign
    DomainEventResumedDetailType (..),
    DomainEventStoppedDetailType (..),
    DomainEventShutdownDetailType (..),
+   ConnectListAllInterfacesFlags (..),
    FreeCallback,
    ConnectDomainEventGenericCallback,
    ConnectDomainEventCallback,
@@ -67,7 +68,12 @@ module System.LibVirt.Foreign
 
    -- * Interface operations
    connectNumOfDefinedInterfaces, connectNumOfInterfaces,
-   interfaceCreate,
+   connectListAllInterfaces, 
+   interfaceCreate, interfaceDefineXML, interfaceDestroy,
+   interfaceUndefine, interfaceIsActive,
+   interfaceFree, interfaceGetMACString, interfaceGetName,
+   interfaceGetXMLDesc, interfaceLookupByName,
+   interfaceLookupByMACString,
 
    -- * callback management
    eventRegisterDefaultImpl,
@@ -83,6 +89,8 @@ module System.LibVirt.Foreign
 
 import Data.Bits
 import Data.Generics
+import Data.ByteString (ByteString, packCString)
+import qualified Data.ByteString as S
 import Foreign hiding (void)
 import Foreign.C.Types
 import Foreign.C.String
@@ -124,6 +132,7 @@ data DomainInfo = DomainInfo {
 {# enum DomainEventResumedDetailType {underscoreToCase} deriving (Eq, Show) #}
 {# enum DomainEventStoppedDetailType {underscoreToCase} deriving (Eq, Show) #}
 {# enum DomainEventShutdownDetailType {underscoreToCase} deriving (Eq, Show) #}
+{# enum ConnectListAllInterfacesFlags {underscoreToCase} deriving (Eq, Show) #}
 
 
 data NetworkXMLFlags = NetworkXML
@@ -168,6 +177,7 @@ data ConnectCredential = ConnectCredential {
   ccResult :: String,
   ccResultLen :: Integer }
   deriving (Eq, Show)
+
 
 {# pointer *virConnectCredentialPtr as ConnectCredentialPtr -> ConnectCredential #}
 
@@ -383,8 +393,7 @@ withCUString str fn = withCString str (fn . castPtr)
 
 -- | Provides capabilities of the hypervisor / driver.
 {# fun virConnectGetCapabilities as connectGetCapabilities
-      { connectionToPtr `Connection' } -> `String' unmarshalString* #}
-
+      { connectionToPtr `Connection' } -> `String' #}
 
 type ConnectDomainEventGenericCallback a = Connection -> Domain -> Ptr a -> IO ()
 type FreeCallback = Ptr () -> IO ()
@@ -403,10 +412,26 @@ foreign import ccall "wrapper"
 foreign import ccall "wrapper"
   mkFreeCallback :: FreeCallback -> IO (FunPtr FreeCallback)
 
+-- Interface operations
 
-unmarshalString :: CString -> IO String
-unmarshalString ptr | ptr == nullPtr = return "" 
-                    | otherwise = peekCString ptr >>= \s -> free ptr >> return s
+-- | Collect the list of interfaces, and allocate an array to store those objects. 
+-- This API solves the race inherent between 'virConnectListInterfaces' and 
+-- 'virConnectListDefinedInterfaces'.
+-- 
+-- Normally, all interfaces are returned; however, @flags can be used to filter 
+-- the results for a smaller list of targeted interfaces. The valid flags are 
+-- divided into groups, where each group contains bits that describe mutually exclusive 
+-- attributes of a interface, and where all bits within a group describe all possible interfaces.
+--
+connectListAllInterfaces :: Connection -> [ConnectListAllInterfacesFlags] -> IO [Interface]
+connectListAllInterfaces conn flags = alloca (\p -> do
+    let p' = castPtr (p::Ptr (Ptr Interface))
+    n <- {# call virConnectListAllInterfaces #} (connectionToPtr conn)
+                                                (p')
+                                                (flags2int flags)
+    exceptionOnMinusOne n
+    peekArray (fromIntegral n) =<< peek p)
+
 -- | Provides the number of active interfaces on the physical host.
 {# fun virConnectNumOfDefinedInterfaces as connectNumOfDefinedInterfaces
     { connectionToPtr `Connection' } -> `Int' #}
@@ -424,5 +449,66 @@ unmarshalString ptr | ptr == nullPtr = return ""
 -- iface:  pointer to a defined interface
 -- flags:  extra flags; not used yet, so callers should always pass 0
 -- Returns:  0 in case of success, -1 in case of error
-interfaceCreate ifs = void $ fmap exceptionOnMinusOne ({# call virInterfaceCreate #} (connectionToPtr ifs) 0)
+interfaceCreate ifs = void $ fmap exceptionOnMinusOne ({# call virInterfaceCreate #} (interfaceToPtr ifs) 0)
      
+-- | Define an interface (or modify existing interface configuration).
+
+-- Normally this change in the interface configuration is immediately 
+-- permanent/persistent, but if @interfaceChangeBegin@ has been 
+-- previously called (i.e. if an interface config transaction is open), 
+-- the new interface definition will only become permanent if 
+-- @interfaceChangeCommit@ is called prior to the next reboot of the 
+-- system running libvirtd. Prior to that time, it can be explicitly 
+-- removed using @virInterfaceChangeRollback@, or will be automatically 
+-- removed during the next reboot of the system running libvirtd.
+interfaceDefineXML con xml = withCString xml $! \str ->
+    fmap ptrToInterface ({# call virInterfaceDefineXML #} (connectionToPtr con) str 0)
+
+-- | deactivate an interface (ie call "ifdown") 
+--
+-- This does not remove the interface from the config, and does not 
+-- free the associated virInterfacePtr object.
+--
+-- If there is an open network config transaction at the time this interface 
+-- is destroyed (that is, if 'virInterfaceChangeBegin' had been called), and 
+-- if the interface is later undefined and then 'virInterfaceChangeRollback'
+-- is called, the restoral of the interface definition will also bring the 
+-- interface back up.
+interfaceDestroy ifs = 
+    fmap exceptionOnMinusOne ({# call virInterfaceDestroy #} (interfaceToPtr ifs) 0)
+
+-- | Free the interface object. The interface itself is unaltered. 
+-- The data structure is freed and should not be used thereafter.
+{# fun virInterfaceFree as interfaceFree
+    { interfaceToPtr `Interface' } -> `Int' exceptionOnMinusOne* #}
+
+-- | Get the MAC for an interface as string. For more information about MAC see RFC4122.
+-- TODO check livetime
+{# fun virInterfaceGetMACString as interfaceGetMACString
+    { interfaceToPtr `Interface' } -> `ByteString' packCString* #}
+
+-- | Get the public name for that interface
+-- TODO check lifetime
+{# fun virInterfaceGetName as interfaceGetName 
+    { interfaceToPtr `Interface' } -> `String' #}
+
+-- | Undefine an interface, ie remove it from the config. 
+-- This does not free the associated virInterfacePtr object.
+{# fun virInterfaceUndefine as interfaceUndefine
+    { interfaceToPtr `Interface' } -> `Int' exceptionOnMinusOne* #}
+
+-- | Determine if the interface is currently running 
+{# fun virInterfaceIsActive as interfaceIsActive
+    { interfaceToPtr `Interface' } -> `Int' exceptionOnMinusOne* #}
+
+{# fun virInterfaceLookupByMACString as interfaceLookupByMACString
+    { connectionToPtr `Connection'
+    , `String' } -> `Interface' ptrToInterface* #}
+
+{# fun virInterfaceGetXMLDesc as interfaceGetXMLDesc
+    { interfaceToPtr `Interface'
+    , `Int' } -> `String' #}
+
+{# fun virInterfaceLookupByName as interfaceLookupByName
+    { connectionToPtr `Connection'
+    , `String' } -> `Interface' ptrToInterface* #}

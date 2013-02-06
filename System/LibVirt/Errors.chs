@@ -10,7 +10,8 @@ module System.LibVirt.Errors
    catchVirtError,
    exceptionOnMinusOne,
    ptrToConnection, ptrToDomain, ptrToNetwork,
-   connectionToPtr, domainToPtr, networkToPtr)
+   connectionToPtr, domainToPtr, networkToPtr,
+   interfaceToPtr, ptrToInterface, ptrToInterface')
   where
 
 import qualified Control.Exception as E
@@ -153,3 +154,13 @@ ptrToNetwork' ptr = return $ Network (castPtr ptr)
 networkToPtr :: Network -> Ptr ()
 networkToPtr (Network ptr) = castPtr ptr
 
+interfaceToPtr :: Interface -> Ptr ()
+interfaceToPtr (Interface ptr) = castPtr ptr
+
+ptrToInterface :: Ptr () -> IO Interface
+ptrToInterface ptr
+  | ptr == nullPtr = handleError
+  | otherwise = return $ Interface (castPtr ptr)
+
+ptrToInterface' :: Ptr () -> IO Interface
+ptrToInterface' ptr = return $ Interface (castPtr ptr)
