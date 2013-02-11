@@ -45,6 +45,7 @@ Library
   Extra-libraries:     "virt"
 
 Executable test
+  Buildable:           False
   Build-depends:       base >= 4 && < 5, syb >= 0.1.0.2, libvirt-hs
   Main-is:             Test.hs
   
