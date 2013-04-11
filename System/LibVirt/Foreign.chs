@@ -27,7 +27,7 @@ module System.LibVirt.Foreign
    DomainEventResumedDetailType (..),
    DomainEventStoppedDetailType (..),
    DomainEventShutdownDetailType (..),
-   ConnectListAllInterfacesFlags (..),
+--   ConnectListAllInterfacesFlags (..),
    FreeCallback,
    ConnectDomainEventGenericCallback,
    ConnectDomainEventCallback,
@@ -68,7 +68,7 @@ module System.LibVirt.Foreign
 
    -- * Interface operations
    connectNumOfDefinedInterfaces, connectNumOfInterfaces,
-   connectListAllInterfaces, 
+   -- connectListAllInterfaces, 
    interfaceCreate, interfaceDefineXML, interfaceDestroy,
    interfaceUndefine, interfaceIsActive,
    interfaceFree, interfaceGetMACString, interfaceGetName,
@@ -132,7 +132,7 @@ data DomainInfo = DomainInfo {
 {# enum DomainEventResumedDetailType {underscoreToCase} deriving (Eq, Show) #}
 {# enum DomainEventStoppedDetailType {underscoreToCase} deriving (Eq, Show) #}
 {# enum DomainEventShutdownDetailType {underscoreToCase} deriving (Eq, Show) #}
-{# enum ConnectListAllInterfacesFlags {underscoreToCase} deriving (Eq, Show) #}
+-- {# enum ConnectListAllInterfacesFlags {underscoreToCase} deriving (Eq, Show) #}
 
 
 data NetworkXMLFlags = NetworkXML
@@ -423,6 +423,7 @@ foreign import ccall "wrapper"
 -- divided into groups, where each group contains bits that describe mutually exclusive 
 -- attributes of a interface, and where all bits within a group describe all possible interfaces.
 --
+{-
 connectListAllInterfaces :: Connection -> [ConnectListAllInterfacesFlags] -> IO [Interface]
 connectListAllInterfaces conn flags = alloca (\p -> do
     let p' = castPtr (p::Ptr (Ptr Interface))
@@ -432,6 +433,7 @@ connectListAllInterfaces conn flags = alloca (\p -> do
     exceptionOnMinusOne n
     peekArray (fromIntegral n) =<< peek p)
 
+-}
 -- | Provides the number of active interfaces on the physical host.
 {# fun virConnectNumOfDefinedInterfaces as connectNumOfDefinedInterfaces
     { connectionToPtr `Connection' } -> `Int' #}
